@@ -20,7 +20,6 @@ void MyInputCallback(void *context, IOReturn result, void *sender, IOHIDReportTy
 int main (int argc, const char * argv[]) {
     NSAutoreleasePool * pool = [[NSAutoreleasePool alloc] init];
     IOReturn sendRet;
-    IOReturn ret;
     const long productId = 0x1320;
     const long vendorId = 0x1294;
     size_t bufferSize = 5;
@@ -46,7 +45,7 @@ int main (int argc, const char * argv[]) {
                                                     kIOHIDOptionsTypeNone);
     IOHIDManagerScheduleWithRunLoop(managerRef, CFRunLoopGetMain(),
                                     kCFRunLoopDefaultMode);
-    ret = IOHIDManagerOpen(managerRef, 0L);
+    IOHIDManagerOpen(managerRef, 0L);
     
     //2) Get your device:
     
