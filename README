@@ -3,8 +3,9 @@ As seen in the deal extreme screenshot, the device is also known as "Webmail win
 
 USE:
 on the command line/Terminal:
-./usbnotifierosx_cli <color_number> <blink time>
-is no parameters, it'll blink blue for 10seconds
+./usbnotifierosx_cli <color_number> <color_number> ....
+Each color will be set in sequence with a delay of 0.05s
+
 color numbers are:
 off: 0
 blue: 1
