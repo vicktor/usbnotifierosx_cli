@@ -98,7 +98,8 @@ int main (int argc, const char * argv[])
     IOHIDManagerRegisterDeviceRemovalCallback(managerRef, Handle_DeviceRemovalCallback, pattern);
 
     //NSLog(@"Starting runloop");
-    [[NSRunLoop currentRunLoop] run];
+    //[[NSRunLoop currentRunLoop] run];
+    [[NSRunLoop currentRunLoop] runUntilDate:[NSDate dateWithTimeIntervalSinceNow:(1 + pattern.count * WAIT * 2)]];
     [pool drain];
     return 0;
 }
