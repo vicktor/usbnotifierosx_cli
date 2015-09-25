@@ -13,7 +13,6 @@
 #define WAIT 0.05
 
 void MyInputCallback(void *context, IOReturn result, void *sender, IOHIDReportType type, uint32_t reportID, uint8_t *report, CFIndex reportLength) {
-    //NSLog(@"MyInputCallback called");
     //process device response buffer (report) here
 }
 
@@ -41,7 +40,6 @@ static void Handle_DeviceMatchingCallback(void *inContext, IOReturn inResult, vo
         uint8_t *report;
         size_t bufferSize = 5;
         NSMutableArray *pattern = (__bridge NSMutableArray *)inContext;
-        //char *inputBuffer = malloc(bufferSize);
         char *outputBuffer = malloc(bufferSize);
         memset(outputBuffer, 0, bufferSize);
 
@@ -53,8 +51,9 @@ static void Handle_DeviceMatchingCallback(void *inContext, IOReturn inResult, vo
                 IOHIDDeviceRegisterInputReportCallback(inIOHIDDeviceRef, report, reportSize, MyInputCallback, inContext);
                 for (NSNumber *n in [pattern objectEnumerator]) {
                     outputBuffer[0] = [n integerValue];
-                    if (outputBuffer[0] > WHITE)
+                    if (outputBuffer[0] > WHITE) {
                         continue; //Skip invalid values
+                    }
                     sendRet = IOHIDDeviceSetReport(inIOHIDDeviceRef, kIOHIDReportTypeOutput, 0, (uint8_t *)outputBuffer, bufferSize);
                     [NSThread sleepUntilDate:[NSDate dateWithTimeIntervalSinceNow:WAIT]];
                 }
@@ -69,30 +68,27 @@ static void Handle_DeviceRemovalCallback(void *inContext, IOReturn inResult, voi
 }
 
 int main(int argc, const char *argv[]) {
-    NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
-    const long productId = 0x1320;
-    const long vendorId = 0x1294;
+    @autoreleasepool {
+        NSDictionary *dict = @{
+            @kIOHIDProductIDKey : @(0x1320),
+             @
+            kIOHIDVendorIDKey : @(0x1294)
+        };
 
-    NSMutableArray *pattern = [[NSMutableArray alloc] init];
-    NSMutableDictionary *dict = [NSMutableDictionary dictionary];
+        NSMutableArray *pattern = [NSMutableArray new];
+        for (int i = 1; i < argc; i++) {
+            [pattern addObject:[NSNumber numberWithInt:atoi(argv[i])]];
+        }
 
-    for (int i = 1; i < argc; i++) {
-        [pattern addObject:[NSNumber numberWithInt:atoi(argv[i])]];
+        IOHIDManagerRef managerRef = IOHIDManagerCreate(kCFAllocatorDefault, kIOHIDOptionsTypeNone);
+        IOHIDManagerScheduleWithRunLoop(managerRef, CFRunLoopGetMain(), kCFRunLoopDefaultMode);
+        IOHIDManagerOpen(managerRef, 0);
+
+        IOHIDManagerSetDeviceMatching(managerRef, (__bridge CFDictionaryRef)dict);
+        IOHIDManagerRegisterDeviceMatchingCallback(managerRef, Handle_DeviceMatchingCallback, pattern);
+        IOHIDManagerRegisterDeviceRemovalCallback(managerRef, Handle_DeviceRemovalCallback, pattern);
+
+        [[NSRunLoop currentRunLoop] runUntilDate:[NSDate dateWithTimeIntervalSinceNow:((1 + pattern.count) * WAIT * 2)]];
     }
-
-    IOHIDManagerRef managerRef = IOHIDManagerCreate(kCFAllocatorDefault, kIOHIDOptionsTypeNone);
-    IOHIDManagerScheduleWithRunLoop(managerRef, CFRunLoopGetMain(), kCFRunLoopDefaultMode);
-    IOHIDManagerOpen(managerRef, 0L);
-
-    dict[@kIOHIDProductIDKey] = @(productId);
-    dict[@kIOHIDVendorIDKey] = @(vendorId);
-    IOHIDManagerSetDeviceMatching(managerRef, (__bridge CFMutableDictionaryRef)dict);
-    IOHIDManagerRegisterDeviceMatchingCallback(managerRef, Handle_DeviceMatchingCallback, pattern);
-    IOHIDManagerRegisterDeviceRemovalCallback(managerRef, Handle_DeviceRemovalCallback, pattern);
-
-    //NSLog(@"Starting runloop");
-    //[[NSRunLoop currentRunLoop] run];
-    [[NSRunLoop currentRunLoop] runUntilDate:[NSDate dateWithTimeIntervalSinceNow:(1 + pattern.count * WAIT * 2)]];
-    [pool drain];
     return 0;
 }
